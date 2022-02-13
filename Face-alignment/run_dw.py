@@ -10,6 +10,8 @@ if __name__ == "__main__":
     preds = fa.get_landmarks(input)
 
     import numpy as np
+    print(type(preds))
+    print(sys.argv[2])
     np.array(preds).tofile(sys.argv[2])
 
     #print(preds)
