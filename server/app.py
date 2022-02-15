@@ -7,7 +7,7 @@ from datetime import datetime
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(os.path.dirname(__file__))), "Face-alignment"))
 import face_alignment
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(os.path.dirname(__file__))), "Face-parsing"))
-from face_parsing import vis_parsing_maps, evaluate
+from face_parsing import execute_face_parsing
 from skimage import io
 import numpy as np
 app = Flask(__name__)
@@ -36,7 +36,7 @@ def info():
 def upload_file():
     return render_template('upload.html')
 
-@app.route('/uploader', methods=['GET', 'POST'])
+@app.route('/uploader', methods=['POST'])
 def uploader_file():
     if request.method == "POST":
         f = request.files['file']
@@ -50,9 +50,10 @@ def uploader_file():
         
         # face_alignment
         execute_face_alignment(img_path, fa_dst_path)
-        evaluate(fp_dst_path, img_path, WEIGHTS_PATH)
+        # face_parsing
+        execute_face_parsing(fp_dst_path, img_path, WEIGHTS_PATH)
 
-        return fa_dst_path
+        return fa_dst_path, fp_dst_path
 
 if __name__ == '__main__':
     app.run(debug=True)

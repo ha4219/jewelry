@@ -46,7 +46,7 @@ def vis_parsing_maps(im, parsing_anno, stride, save_im=False, save_path='vis_res
     if save_im:
         cv2.imwrite(save_path, vis_parsing_anno)
 
-def evaluate(respth='./res/res000.jpg', dspth='./src/src000.jpg', cp='./res/cp/79999_iter.pth'):
+def execute_face_parsing(respth='./res/res000.jpg', dspth='./src/src000.jpg', cp='./res/cp/79999_iter.pth'):
 
     n_classes = 19
     net = BiSeNet(n_classes=n_classes)
