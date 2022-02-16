@@ -22,7 +22,7 @@ def execute_face_alignment(img_path, dst_path):
     fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._3D, flip_input=False)
     input_ = io.imread(img_path)
     preds = fa.get_landmarks(input_)
-    np.array(preds).tofile(".\\" + dst_path)
+    np.array(preds).tofile(dst_path)
 
 @app.route('/')
 def index():
