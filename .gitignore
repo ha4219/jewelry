@@ -3,6 +3,8 @@
 # Face-alignment
 Face-parsing/build
 Face-alignment/face_alignment/pretrained_models/depth-2a464da4ea.pth.tar
+
+test.py
 # dist
 # test images
 
@@ -32,4 +34,3 @@ docs/_build/
 htmlcov/
 .coverage
 .coverage.*
-*,cover
