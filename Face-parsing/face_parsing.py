@@ -2,14 +2,21 @@
 # -*- encoding: utf-8 -*-
 
 from logger import setup_logger
-from model import BiSeNet
+from face_parsing_model import BiSeNet
+from face_dataset import FaceMask
 
 import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
+import torch.distributed as dist
 
-import sys
 import os
-import os.path as osp
+import logging
+import time
 import numpy as np
+from tqdm import tqdm
+import math
 from PIL import Image
 import torchvision.transforms as transforms
 import cv2
@@ -17,13 +24,13 @@ import cv2
 def vis_parsing_maps(im, parsing_anno, stride, save_im=False, save_path='vis_results/parsing_map_on_im.jpg'):
     # Colors for all 20 parts
     part_colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0],
-                   [255, 0, 85], [255, 0, 170],
-                   [0, 255, 0], [85, 255, 0], [170, 255, 0],
-                   [0, 255, 85], [0, 255, 170],
-                   [0, 0, 255], [85, 0, 255], [170, 0, 255],
-                   [0, 85, 255], [0, 170, 255],
-                   [255, 255, 0], [255, 255, 85], [255, 255, 170],
-                   [255, 0, 255], [255, 85, 255], [255, 170, 255],
+                    [255, 0, 85], [255, 0, 170],
+                    [0, 255, 0], [85, 255, 0], [170, 255, 0],
+                    [0, 255, 85], [0, 255, 170],
+                    [0, 0, 255], [85, 0, 255], [170, 0, 255],
+                    [0, 85, 255], [0, 170, 255],
+                    [255, 255, 0], [255, 255, 85], [255, 255, 170],
+                    [255, 0, 255], [255, 85, 255], [255, 170, 255],
                     [0, 255, 255], [85, 255, 255], [170, 255, 255]]
 
     im = np.array(im)
@@ -44,16 +51,11 @@ def vis_parsing_maps(im, parsing_anno, stride, save_im=False, save_path='vis_res
 
     # Save result or not
     if save_im:
-        cv2.imwrite(save_path, vis_parsing_anno)
+        cv2.imwrite(save_path, vis_im, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
 
-def execute_face_parsing(respth='./res/res000.jpg', dspth='./src/src000.jpg', cp='./res/cp/79999_iter.pth'):
+    # return vis_im
 
-    n_classes = 19
-    net = BiSeNet(n_classes=n_classes)
-    net.cuda()
-    net.load_state_dict(torch.load(cp))
-    net.eval()
-
+def execute_face_parsing(respth='./res/test_res', dspth='./data', net=''):
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
@@ -69,3 +71,8 @@ def execute_face_parsing(respth='./res/res000.jpg', dspth='./src/src000.jpg', cp
         parsing = out.squeeze(0).cpu().numpy().argmax(0)
         
         vis_parsing_maps(image, parsing, stride=1, save_im=True, save_path=respth)
+
+
+if __name__ == "__main__":
+    setup_logger('./res')
+    execute_face_parsing()
