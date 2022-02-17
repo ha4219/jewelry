@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 from logger import setup_logger
-from model import BiSeNet
+from face_parsing_model import BiSeNet
 from face_dataset import FaceMask
 
 import torch
@@ -83,12 +83,6 @@ def evaluate(respth='./res/test_res', dspth='./data', cp='model_final_diss.pth')
             parsing = out.squeeze(0).cpu().numpy().argmax(0)
 
             vis_parsing_maps(image, parsing, stride=1, save_im=True, save_path=osp.join(respth, image_path))
-
-
-
-
-
-
 
 if __name__ == "__main__":
     setup_logger('./res')

@@ -53,7 +53,7 @@ models_urls = {
 
 class FaceAlignment:
     def __init__(self, landmarks_type, network_size=NetworkSize.LARGE,
-                 device='cuda', flip_input=False, face_detector='sfd', verbose=False):
+                device='cuda', flip_input=False, face_detector='sfd', verbose=False):
         self.device = device
         self.flip_input = flip_input
         self.landmarks_type = landmarks_type
