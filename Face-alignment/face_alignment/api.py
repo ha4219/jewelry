@@ -77,7 +77,7 @@ class FaceAlignment:
             network_name = '3DFAN-' + str(network_size)
 
 #        fan_weights = load_url(models_urls[network_name], map_location=lambda storage, loc: storage)
-        self.face_alignment_net.load_state_dict(torch.load('C:/Users/khyog/jewelry/Face-alignment/face_alignment/pretrained_models/3DFAN4-7835d9f11d.pth.tar'))
+        self.face_alignment_net.load_state_dict(torch.load(os.path.join(os.path.dirname(__file__), 'pretrained_models', '3DFAN4-7835d9f11d.pth.tar')))
 #        self.face_alignment_net.load_state_dict(fan_weights)
 
         self.face_alignment_net.to(device)
