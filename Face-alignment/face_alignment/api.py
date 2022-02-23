@@ -66,7 +66,7 @@ class FaceAlignment:
 
         # Get the face detector
         face_detector_module = __import__('face_alignment.detection.' + face_detector,
-                                          globals(), locals(), [face_detector], 0)
+                                        globals(), locals(), [face_detector], 0)
         self.face_detector = face_detector_module.FaceDetector(device=device, verbose=verbose)
 
         # Initialise the face alignemnt networks
@@ -77,9 +77,8 @@ class FaceAlignment:
             network_name = '3DFAN-' + str(network_size)
 
 #        fan_weights = load_url(models_urls[network_name], map_location=lambda storage, loc: storage)
-        self.face_alignment_net.load_state_dict(torch.load('C:/Users/khyog/jewelry/Face-alignment/face_alignment/pretrained_models/3DFAN4-7835d9f11d.pth.tar'))
+        self.face_alignment_net.load_state_dict(torch.load(os.path.join(os.path.dirname(__file__), 'pretrained_models', '3DFAN4-7835d9f11d.pth.tar')))
 #        self.face_alignment_net.load_state_dict(fan_weights)
-
         self.face_alignment_net.to(device)
         self.face_alignment_net.eval()
 
@@ -115,7 +114,7 @@ class FaceAlignment:
         This function predicts a set of 68 2D or 3D images, one for each image present.
         If detect_faces is None the method will also run a face detector.
 
-         Arguments:
+        Arguments:
             image_or_path {string or numpy.array or torch.tensor} -- The input image or path to it.
 
         Keyword Arguments:
@@ -216,7 +215,7 @@ class FaceAlignment:
             for face in faces:
                 center = torch.FloatTensor(
                     [(face[2] + face[0]) / 2.0,
-                     (face[3] + face[1]) / 2.0])
+                    (face[3] + face[1]) / 2.0])
 
                 center[1] = center[1] - (face[3] - face[1]) * 0.12
                 scale = (face[2] - face[0] + face[3] - face[1]) / self.face_detector.reference_scale
