@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(os.path.dirname(__f
 # below two modules in face_parsing directory
 from face_parsing import execute_face_parsing
 from face_parsing_model import BiSeNet
-
+from PIL import Image
 from skimage import io
 import numpy as np
 app = Flask(__name__)
@@ -33,7 +33,8 @@ NET.load_state_dict(torch.load(WEIGHTS_PATH))
 NET.eval()
 
 def execute_face_alignment(img_path, dst_path):
-    input_ = io.imread(img_path)
+    input_ = np.array(Image.open(img_path).convert("RGB"))
+    print(type(input_))
     preds = FA.get_landmarks(input_)
     np.array(preds).tofile(dst_path)
 
@@ -49,18 +50,18 @@ def upload_file():
 def process_complete():
     return render_template('complete.html')
 
-@app.route('/uploader', methods=['POST'])
+@app.route('/uploader', methods=['GET', 'POST'])
 def uploader_file():
     if request.method == "POST":
         f = request.files['file']
 
         current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")
-        image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+".jpg"))
+        image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+'.'+f.filename.split('.')[-1]))
         fa_dst_path = os.path.join(ALIGNMENT_DIR_PATH, current_time+'.bin')
         fp_dst_path = os.path.join(PARSING_DIR_PATH, current_time+'.png')
         # Save Image in file_path
         f.save(image_path)
-        
+        print(image_path, fa_dst_path, fp_dst_path) 
         # face_alignment
         execute_face_alignment(image_path, fa_dst_path)
         # face_parsing
