@@ -34,7 +34,6 @@ NET.eval()
 
 def execute_face_alignment(img_path, dst_path):
     input_ = np.array(Image.open(img_path).convert("RGB"))
-    print(type(input_))
     preds = FA.get_landmarks(input_)
     np.array(preds).tofile(dst_path)
 
@@ -61,7 +60,6 @@ def uploader_file():
         fp_dst_path = os.path.join(PARSING_DIR_PATH, current_time+'.png')
         # Save Image in file_path
         f.save(image_path)
-        print(image_path, fa_dst_path, fp_dst_path) 
         # face_alignment
         execute_face_alignment(image_path, fa_dst_path)
         # face_parsing

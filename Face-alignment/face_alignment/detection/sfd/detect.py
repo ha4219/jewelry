@@ -17,8 +17,6 @@ from .bbox import *
 
 
 def detect(net, img, device):
-    print(img)
-    print(img.shape)
     img = img - np.array([104, 117, 123])
     img = img.transpose(2, 0, 1)
     # Creates a batch of 1
