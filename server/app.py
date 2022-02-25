@@ -49,7 +49,7 @@ def upload_file():
 def process_complete():
     return render_template('complete.html')
 
-@app.route('/uploader', methods=['GET', 'POST'])
+@app.route('/uploader', methods=['POST'])
 def uploader_file():
     if request.method == "POST":
         f = request.files['file']
