@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "58254be0-546f-443d-9245-d886f0c0caff": {
+      "ProjectGuid": "58254be0-546f-443d-9245-d886f0c0caff",
+      "DisplayName": "coinGenerator",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}
