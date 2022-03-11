@@ -55,7 +55,7 @@ def vis_parsing_maps(im, parsing_anno, stride, save_im=False, save_path='vis_res
 
     # return vis_im
 
-def execute_face_parsing(respth='./res/test_res', dspth='./data', net=''):
+def execute_face_parsing(dspth='./data', respth='./res/test_res', net=''):
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
