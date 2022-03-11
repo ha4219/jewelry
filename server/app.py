@@ -62,28 +62,28 @@ def execute_face_alignment(img_path, dst_path):
 @app.route('/assets/images/<path>')
 def image(path):
     try:
-        return send_from_directory(IMG_DIR_PATH, filename=path)
+        return send_from_directory(IMG_DIR_PATH, path=path)
     except FileNotFoundError:
         abort(404)
 
 @app.route('/assets/face_alignment_results/<path>')
 def image2(path):
     try:
-        return send_from_directory(ALIGNMENT_DIR_PATH, filename=path)
+        return send_from_directory(ALIGNMENT_DIR_PATH, path=path)
     except FileNotFoundError:
         abort(404)
 
 @app.route('/assets/face_parsing_results/<path>')
 def image3(path):
     try:
-        return send_from_directory(PARSING_DIR_PATH, filename=path)
+        return send_from_directory(PARSING_DIR_PATH, path=path)
     except FileNotFoundError:
         abort(404)
 
 @app.route('/assets/coin_generator_restuls/<path>')
 def image4(path):
     try:
-        return send_from_directory(COIN_DIR_PATH, filename=path)
+        return send_from_directory(COIN_DIR_PATH, path=path)
     except FileNotFoundError:
         abort(404)
 
