@@ -80,7 +80,7 @@ def image3(path):
     except FileNotFoundError:
         abort(404)
 
-@app.route('/assets/coin_generator_restuls/<path>')
+@app.route('/assets/coin_generator_results/<path>')
 def image4(path):
     try:
         return send_from_directory(COIN_DIR_PATH, path=path)
