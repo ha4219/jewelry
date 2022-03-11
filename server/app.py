@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, url_for, send_from_directory, abort
 from graphviz import render
 from werkzeug.utils import secure_filename
 import os
@@ -16,6 +16,11 @@ from PIL import Image
 from skimage import io
 import numpy as np
 app = Flask(__name__)
+
+app.config["CLIENT_IMAGES"] = os.path.join('assets', 'images')
+app.config["CLIENT_ALIGNMENT"] = os.path.join('assets', 'face_alignment_results')
+app.config["CLIENT_PARSING"] = os.path.join('assets', 'face_parsing_results')
+app.config["CLIENT_COIN"] = os.path.join('assets', 'coin_generator_restuls')
 
 # SET PATH
 IMG_DIR_PATH = os.path.join('assets', 'images')
@@ -44,6 +49,34 @@ def index():
 @app.route('/upload')
 def upload_file():
     return render_template('upload.html')
+
+@app.route('/assets/images/<path>')
+def image(path):
+    try:
+        return send_from_directory(app.config["CLIENT_IMAGES"], filename=path)
+    except FileNotFoundError:
+        abort(404)
+
+@app.route('/assets/face_alignment_results/<path>')
+def image(path):
+    try:
+        return send_from_directory(app.config["CLIENT_ALIGNMENT"], filename=path)
+    except FileNotFoundError:
+        abort(404)
+
+@app.route('/assets/face_parsing_results/<path>')
+def image(path):
+    try:
+        return send_from_directory(app.config["CLIENT_PARSING"], filename=path)
+    except FileNotFoundError:
+        abort(404)
+
+@app.route('/assets/coin_generator_restuls/<path>')
+def image(path):
+    try:
+        return send_from_directory(app.config["CLIENT_COIN"], filename=path)
+    except FileNotFoundError:
+        abort(404)
 
 @app.route('/complete')
 def process_complete():
