@@ -35,3 +35,9 @@ docs/_build/
 htmlcov/
 .coverage
 .coverage.*
+
+# image and stl format
+*.stl
+*.jpg
+*.jpeg
+*.png
