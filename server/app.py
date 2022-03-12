@@ -48,7 +48,7 @@ lib = ctypes.cdll.LoadLibrary(COIN_LIB_PATH)
 def image_save_with_resize(image, image_path):
     img = Image.open(image)
     img = img.resize((512, 512), Image.BILINEAR)
-    img.save(image_path)
+    img.convert("RGB").save(image_path)
 
 def image_save_without_resize(image, image_path):
     img = Image.open(image)
