@@ -2,6 +2,7 @@ from this import d
 from flask import Flask, redirect, render_template, request, url_for, send_from_directory, abort
 from graphviz import render
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import NotFound
 import os
 import sys
 from datetime import datetime
@@ -44,7 +45,6 @@ NET.eval()
 # load lib.so
 lib = ctypes.cdll.LoadLibrary(COIN_LIB_PATH)
 
-
 def image_save_with_resize(image, image_path):
     img = Image.open(image)
     img = img.resize((512, 512), Image.BILINEAR)
@@ -52,7 +52,7 @@ def image_save_with_resize(image, image_path):
 
 def image_save_without_resize(image, image_path):
     img = Image.open(image)
-    img.save(image, image_path)
+    img.convert("RGB").save(image, image_path)
 
 def execute_face_alignment(img_path, dst_path):
     input_ = io.imread(img_path)
@@ -88,14 +88,19 @@ def image4(path):
         abort(404)
 
 @app.route('/face_alignment', methods=['POST'])
-def post_face_alignment():
-    f = request.files['front']
-    
+def post_face_alignment(): 
     current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+    if request.files:
+        f = request.files['front']
+        image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+        image_save_with_resize(f, image_path)
+    else:
+        image_path = os.path.join(IMG_DIR_PATH,request.form.get('front'))
+        if not os.path.isfile(image_path):
+            raise NotFound('Image file not found')
+            
     fa_dst_path = os.path.join(ALIGNMENT_DIR_PATH, current_time+'.bin')
-    image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
-    
-    image_save_with_resize(f, image_path)
     
     execute_face_alignment(image_path, fa_dst_path)
 
@@ -104,15 +109,21 @@ def post_face_alignment():
 
 @app.route('/face_parsing', methods=['POST'])
 def post_face_parsing():
-    f = request.files['front']
-    
+
     current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+    if request.files:
+        f = request.files['front']
+        image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+        image_save_with_resize(f, image_path)
+    else:
+        image_path = os.path.join(IMG_DIR_PATH,request.form.get('front'))
+        if not os.path.isfile(image_path):
+            raise NotFound('Image file not found')
+    
     fp_dst_path = os.path.join(PARSING_DIR_PATH, current_time+'.png')
-    image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
     
-    image_save_with_resize(f, image_path)
-    
-    execute_face_parsing(fp_dst_path, image_path, NET)
+    execute_face_parsing(image_path, fp_dst_path, NET)
     
     dc = {'image_path' : image_path, 'fp_dst_path' : fp_dst_path}
     return json.dumps(dc)
@@ -121,35 +132,87 @@ def post_face_parsing():
 @app.route('/coin_generating', methods=['POST'])
 def post_coin_generating():
     req = request.files
-    
+    req_form = request.form
     current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")
-    front_image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+"."+req['front'].filename.split('.')[-1]))
-    text_image_path = os.path.join(TEXT_IMAGE_DIR_PATH, secure_filename(current_time+"."+req['text'].filename.split('.')[-1]))
-    back_image_path = os.path.join(BACK_IMAGE_DIR_PATH, secure_filename(current_time+"."+req['back'].filename.split('.')[-1]))
+
+    file_list = []
+    for i in req:
+        file_list.append(i)
+
+    # file or text
+    if 'front' in file_list and req['front'].filename != '':
+        f = req['front']
+        front_image_path = os.path.join(IMG_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+        image_save_with_resize(f, front_image_path)
+    elif req_form.get('front'):
+        front_image_path = os.path.join(IMG_DIR_PATH,req_form.get('front'))
+        if not os.path.isfile(front_image_path):
+            raise NotFound('Front image file not found')
+    else:
+        front_image_path = '../coin/007F.png'
+
+    if 'text' in file_list and req['text'].filename != '':
+        f = req['text']
+        text_image_path = os.path.join(TEXT_IMAGE_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+        image_save_with_resize(f, text_image_path)
+    elif req_form.get('text'):
+        text_image_path = os.path.join(TEXT_IMAGE_DIR_PATH,request.form.get('text'))
+        if not os.path.isfile(text_image_path):
+            raise NotFound('Text Image file not found')
+    else:
+        text_image_path = '../coin/007F_TEXT.png'
+
+    if 'back' in file_list and req['back'].filename != '':
+        f = req['back']
+        back_image_path = os.path.join(BACK_IMAGE_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+        image_save_with_resize(f, back_image_path)
+    elif req_form.get('back'):
+        back_image_path = os.path.join(BACK_IMG_DIR_PATH,request.form.get('back'))
+        if not os.path.isfile(back_image_path):
+            raise NotFound('Back Image file not found')
+    else:
+        back_image_path = '../coin/003R.png'
+
+    if 'face_alignment' in file_list and req['face_alignment'].filename != '':
+        f = req['face_alignment']
+        face_alignment_path = os.path.join(ALIGNMENT_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+    elif req_form.get('face_alignment'):
+        face_alignment_path = os.path.join(ALIGNMENT_DIR_PATH,request.form.get('face_alignment'))
+        if not os.path.isfile(face_alignment_path):
+            raise NotFound('Face_alignment file not found')
+    else:
+        face_alignment_path = "NONE"
+
+    if 'face_parsing' in file_list and req['face_parsing'].filename != '':
+        f = req['face_parsing']
+        face_parsing_path = os.path.join(PARSING_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+    elif req_form.get('face_parsing'):
+        face_parsing_path = os.path.join(PARSING_DIR_PATH,request.form.get('face_parsing'))
+        if not os.path.isfile(face_parsing_path):
+            raise NotFound('Face_parsing file not found')
+    else:
+        face_parsing_path = "NONE"
+
+
     coin_outp_path = os.path.join(COIN_DIR_PATH, current_time+'.stl')
      
-    image_save_with_resize(req['front'], front_image_path)
-    if req['text']:
-        image_save_without_resize(req['text'], text_image_path)
-    if req['back']:
-        image_save_with_resize(req['back'], back_image_path)
-
     arg = [
         "",
-        front_image_path if req['front'] else "../coin/007F.png",
-        "NONE",
-        "NONE",
-        text_image_path if req['text'] else "../coin/007F_TEXT.png",
-        coin_outp_path if req['front'] else "../coin/tmp.stl",
-        back_image_path if req['back'] else "../coin/003R.png"
+        front_image_path,
+        face_parsing_path,
+        face_alignment_path,
+        text_image_path,
+        coin_outp_path,
+        back_image_path,
     ]
-    
     coin_generator(lib, arg)
     
     dc = {
             'front_image_path' : front_image_path,
             'text_image_path' : text_image_path,
             'back_image_path' : back_image_path,
+            'face_alignment_path' : face_alignment_path,
+            'face_parsing_path' : face_parsing_path,
             'coin_outp_path' : coin_outp_path
          }
     return json.dumps(dc)
@@ -198,7 +261,10 @@ def uploader_file():
             'coin_dst_path' : coin_dst_path
         }
     return json.dumps(dc)
-    
-    
+@app.route('/test', methods=['POST'])
+def test():
+    req_form = request.files
+    return '1' if req_form['frtr'] else '0'
+
 if __name__ == '__main__':
     app.run(debug=True)
