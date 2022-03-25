@@ -1,5 +1,5 @@
 from this import d
-from flask import Flask, redirect, render_template, request, url_for, send_from_directory, abort
+from flask import Flask, redirect, render_template, request, url_for, send_from_directory, abort, jsonify
 from graphviz import render
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
@@ -21,6 +21,7 @@ import numpy as np
 from PIL import Image
 import ctypes
 import json
+from exception import Face_Alignment_Model_Error, Face_Parsing_Model_Error, Uploader_Front_Image_Error
 app = Flask(__name__)
 
 # SET PATH
@@ -45,6 +46,26 @@ NET.eval()
 # load lib.so
 lib = ctypes.cdll.LoadLibrary(COIN_LIB_PATH)
 
+# Error Handlers
+@app.errorhandler(Face_Alignment_Model_Error)
+def handle_exception(err):
+    response = {"error_code" : err.code , "message":err.error_message}
+    app.logger.error(f"{err.code} : {response['message']}")
+    return jsonify(response), err.code
+
+@app.errorhandler(Face_Parsing_Model_Error)
+def handle_exception(err):
+    response = {"error_code" : err.code, "message":err.error_message}
+    app.logger.error(f"{err.code} : {response['message']}")
+    return jsonify(response), err.code
+
+@app.errorhandler(Uploader_Front_Image_Error)
+def handle_exception(err):
+    response = {"error_code" : err.code, "message":err.error_message}
+    app.logger.error(f"{err.code} : {response['message']}")
+    return jsonify(response), err.code
+
+# Functions
 def image_save_with_resize(image, image_path):
     img = Image.open(image)
     img = img.resize((512, 512), Image.BILINEAR)
@@ -59,10 +80,18 @@ def execute_face_alignment(img_path, dst_path):
     preds = FA.get_landmarks(input_)
     np.array(preds).tofile(dst_path)
 
+#Routing
 @app.route('/assets/images/<path>')
 def image(path):
     try:
         return send_from_directory(IMG_DIR_PATH, path=path)
+    except FileNotFoundError:
+        abort(404)
+
+@app.route('/assets/back_images/<path>')
+def image5(path):
+    try:
+        return send_from_directory(BACK_IMG_DIR_PATH, path=path)
     except FileNotFoundError:
         abort(404)
 
@@ -87,6 +116,10 @@ def image4(path):
     except FileNotFoundError:
         abort(404)
 
+@app.route('/index', methods=['GET'])
+def index():
+    return render_template('index.html')
+
 @app.route('/face_alignment', methods=['POST'])
 def post_face_alignment(): 
     current_time = datetime.now().strftime("%Y%m%d%H%M%S%f")
@@ -101,8 +134,11 @@ def post_face_alignment():
             raise NotFound('Image file not found')
             
     fa_dst_path = os.path.join(ALIGNMENT_DIR_PATH, current_time+'.bin')
-    
-    execute_face_alignment(image_path, fa_dst_path)
+
+    try:
+        execute_face_alignment(image_path, fa_dst_path)
+    except:
+        raise Face_Alignment_Model_Error("Invalid Front Image Input, There is No Face")
 
     dc = {'image_path' : image_path, 'fa_dst_path' : fa_dst_path}
     return json.dumps(dc)
@@ -122,8 +158,11 @@ def post_face_parsing():
             raise NotFound('Image file not found')
     
     fp_dst_path = os.path.join(PARSING_DIR_PATH, current_time+'.png')
+    try:
+        execute_face_parsing(image_path, fp_dst_path, NET)
+    except:
+        raise Face_Parsing_Model_Error("Invalid Front Image Input, There is No Face")
     
-    execute_face_parsing(image_path, fp_dst_path, NET)
     
     dc = {'image_path' : image_path, 'fp_dst_path' : fp_dst_path}
     return json.dumps(dc)
@@ -172,27 +211,32 @@ def post_coin_generating():
             raise NotFound('Back Image file not found')
     else:
         back_image_path = '../coin/003R.png'
+    
+    try:
+        if 'face_alignment' in file_list and req['face_alignment'].filename != '':
+            f = req['face_alignment']
+            face_alignment_path = os.path.join(ALIGNMENT_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+        elif req_form.get('face_alignment'):
+            face_alignment_path = os.path.join(ALIGNMENT_DIR_PATH,request.form.get('face_alignment'))
+            if not os.path.isfile(face_alignment_path):
+                raise NotFound('Face_alignment file not found')
+        else:
+            face_alignment_path = "NONE"
+    except:
+        raise Face_Alignment_Model_Error("Invalid Front Image Input, There is No Face")
 
-    if 'face_alignment' in file_list and req['face_alignment'].filename != '':
-        f = req['face_alignment']
-        face_alignment_path = os.path.join(ALIGNMENT_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
-    elif req_form.get('face_alignment'):
-        face_alignment_path = os.path.join(ALIGNMENT_DIR_PATH,request.form.get('face_alignment'))
-        if not os.path.isfile(face_alignment_path):
-            raise NotFound('Face_alignment file not found')
-    else:
-        face_alignment_path = "NONE"
-
-    if 'face_parsing' in file_list and req['face_parsing'].filename != '':
-        f = req['face_parsing']
-        face_parsing_path = os.path.join(PARSING_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
-    elif req_form.get('face_parsing'):
-        face_parsing_path = os.path.join(PARSING_DIR_PATH,request.form.get('face_parsing'))
-        if not os.path.isfile(face_parsing_path):
-            raise NotFound('Face_parsing file not found')
-    else:
-        face_parsing_path = "NONE"
-
+    try:
+        if 'face_parsing' in file_list and req['face_parsing'].filename != '':
+            f = req['face_parsing']
+            face_parsing_path = os.path.join(PARSING_DIR_PATH, secure_filename(current_time+"."+f.filename.split('.')[-1]))
+        elif req_form.get('face_parsing'):
+            face_parsing_path = os.path.join(PARSING_DIR_PATH,request.form.get('face_parsing'))
+            if not os.path.isfile(face_parsing_path):
+                raise NotFound('Face_parsing file not found')
+        else:
+            face_parsing_path = "NONE"
+    except:
+        raise Face_Parsing_Model_Error("Invalid Front Image Input, There is No Face")
 
     coin_outp_path = os.path.join(COIN_DIR_PATH, current_time+'.stl')
      
@@ -228,20 +272,30 @@ def uploader_file():
     coin_dst_path = os.path.join(COIN_DIR_PATH, current_time+'.stl')
     fa_dst_path = os.path.join(ALIGNMENT_DIR_PATH, current_time+'.bin')
     fp_dst_path = os.path.join(PARSING_DIR_PATH, current_time+'.png')
-    # Save Image in file_path
-    image_save_with_resize(req['front'], front_image_path) 
+
+    # Save Image in file_path 
+    try:
+        image_save_with_resize(req['front'], front_image_path) 
+    except:
+        raise Uploader_Front_Image_Error()
+    
     if req['text']:
         image_save_without_resize(req['text'], text_image_path)
     if req['back']:
         image_save_with_resize(req['back'], back_image_path)
 
-    
-    # face_alignment
-    execute_face_alignment(front_image_path, fa_dst_path)
+    try: 
+        # face_alignment
+        execute_face_alignment(front_image_path, fa_dst_path)
+    except:
+        raise Face_Alignment_Model_Error("Invalid Front Image Input, There is No Face")
     # face_parsing
-    execute_face_parsing(front_image_path, fp_dst_path, NET)
-
-    # test coin generator, arg : input
+    try:
+        execute_face_parsing(front_image_path, fp_dst_path, NET)
+    except:
+        raise Face_Parsing_Model_Error("Invalid Front Image Input, There is No Face")
+   
+   # test coin generator, arg : input
     arg = [
         "",
         front_image_path if req['front'] else "../coin/007F.png",
@@ -261,6 +315,11 @@ def uploader_file():
             'coin_dst_path' : coin_dst_path
         }
     return json.dumps(dc)
+
+@app.route('/')
+def ttttttttest():
+    return 'test'
+
 @app.route('/test', methods=['POST'])
 def test():
     req_form = request.files
